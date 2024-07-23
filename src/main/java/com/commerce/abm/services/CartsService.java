@@ -58,7 +58,7 @@ public class CartsService {
 
     public void deleteCart(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("Cart id cannot be null");
+            throw new IllegalArgumentException("Cart id, cannot be null");
         }
         repository.deleteById(id);
     }
