@@ -15,8 +15,9 @@ public class ProductsService {
     private ProductsRepository repository;
     private CartsRepository cartsRepository;
 
-    public void newProduct(Product product) {
+    public Product newProduct(Product product) {
         repository.save(product);
+        return product;
     }
 
     public List<Product> readAllProducts() {
@@ -25,6 +26,19 @@ public class ProductsService {
 
     public Optional<Product> readProductById(Long id) {
         return repository.findById(id);
+    }
+
+    public Product updateProduct(Long id, Product dataProduct) {
+        Optional<Product> existingProduct = repository.findById(id);
+        if (existingProduct.isPresent()) {
+            Product product = existingProduct.get();
+            if (dataProduct.getProduct() != null) product.setProduct(dataProduct.getProduct());
+            if (dataProduct.getPrice() != null) product.setPrice(dataProduct.getPrice());
+            if (dataProduct.getStock() != null) product.setStock(dataProduct.getStock());
+            return repository.save(product);
+        } else {
+            throw new RuntimeException("Product not found");
+        }
     }
 
     public void deleteProduct(Long id) {

@@ -1,11 +1,7 @@
 package com.commerce.abm.entities;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -20,8 +16,4 @@ public class Product {
     @Getter @Setter private Double price;
 
     @Getter @Setter private Integer stock;
-
-    @ManyToMany(mappedBy = "products")
-    @JsonBackReference("cart-products")
-    @Getter @Setter private List<Cart> carts = new ArrayList<>();
 }

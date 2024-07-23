@@ -28,7 +28,6 @@ public class ClientsService {
         Cart cart = new Cart();
         cart.setAmount(0);
         cart.setPrice(0.0);
-        cart.setInvoice(null);
         cart.setClient(client);
         cartsRepository.save(cart);
         client.getCarts().add(cart);

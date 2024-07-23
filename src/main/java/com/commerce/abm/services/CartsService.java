@@ -19,10 +19,6 @@ public class CartsService {
     @Autowired
     private ProductsRepository productRepository;
 
-    public Optional<Cart> cartById(Long id) {
-        return repository.findById(id);
-    }
-
     @Transactional
     public Cart newCart(Cart cart) {
         if (cart.getClient() == null) {
@@ -43,45 +39,21 @@ public class CartsService {
     }
 
     @Transactional
-    public Cart addProductToCart(Long cartId, List<Product> products) {
-        Optional<Cart> cartOpt = repository.findById(cartId);
-        if (cartOpt.isPresent()) {
-            Cart cart = cartOpt.get();
-            for (Product product : products) {
-                product.getCarts().add(cart);
-                cart.getProducts().add(product);
-            }
-            cart.setAmount(cart.getProducts().size());
-            cart.setPrice(cart.getProducts().stream().mapToDouble(Product::getPrice).sum());
-            return repository.save(cart);
-        } else {
-            throw new IllegalArgumentException("Cart not founded");
+    public Cart addProductToCart(Long clientId, Long productId, int quantity) {
+        Optional<Cart> cartOpt = repository.findById(clientId);
+        if (!cartOpt.isPresent()) {
+            throw new IllegalArgumentException("Cart not found for client ID: " + clientId);
         }
-    }
-
-    @Transactional
-    public Cart addProductsToCart(Long cartId, List<Long> productIds) {
-        Optional<Cart> cartOpt = repository.findById(cartId);
-        if (cartOpt.isPresent()) {
-            Cart cart = cartOpt.get();
-            for (Long productId : productIds) {
-                Optional<Product> productOpt = productRepository.findById(productId);
-                if (productOpt.isPresent()) {
-                    Product product = productOpt.get();
-                    if (!cart.getProducts().contains(product)) {
-                        cart.getProducts().add(product);
-                        product.getCarts().add(cart);
-                    }
-                } else {
-                    throw new IllegalArgumentException("Product ID " + productId + ", not founded");
-                }
-            }
-            cart.setAmount(cart.getProducts().size());
-            cart.setPrice(cart.getProducts().stream().mapToDouble(Product::getPrice).sum());
-            return repository.save(cart);
-        } else {
-            throw new IllegalArgumentException("Cart not founded");
+        Cart cart = cartOpt.get();
+        Optional<Product> productOpt = productRepository.findById(productId);
+        if (!productOpt.isPresent()) {
+            throw new IllegalArgumentException("Product not found for product ID: " + productId);
         }
+        Product product = productOpt.get();
+        cart.setProduct(product);
+        cart.setAmount(quantity);
+        cart.setPrice(product.getPrice() * quantity);
+        return repository.save(cart);
     }
 
     public void deleteCart(Long id) {
