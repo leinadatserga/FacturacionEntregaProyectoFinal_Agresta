@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +16,8 @@ public class Cart {
     @Getter @Setter private Long cartId;
 
     @Getter @Setter private boolean delivered;
+
+    @Getter @Setter private LocalDateTime lastUpdated;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId

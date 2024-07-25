@@ -1,6 +1,7 @@
 package com.commerce.abm.controllers;
 
 import com.commerce.abm.entities.Cart;
+import com.commerce.abm.services.CartsCleanUpService;
 import com.commerce.abm.services.CartsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,9 @@ import java.util.Optional;
 public class CartsController {
     @Autowired
     private CartsService cartsService;
+
+    @Autowired
+    private CartsCleanUpService cartsCleanUpService;
 
     @PostMapping
     @Operation(summary = "Add a Cart", description = "Using the required data, create a new Cart")
@@ -98,6 +102,21 @@ public class CartsController {
             }
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/cleanup")
+    @Operation(summary = "Remove inactive carts", description = "Manually trigger the removal of inactive carts")
+    public ResponseEntity<String> cleanupCarts() {
+        try {
+            boolean cartsRemoved = cartsCleanUpService.removeInactiveCarts();
+            if (cartsRemoved) {
+                return ResponseEntity.ok("Inactive carts removed successfully");
+            } else {
+                return ResponseEntity.ok("No inactive Carts to remove");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error removing inactive carts: " + e.getMessage());
         }
     }
 }
