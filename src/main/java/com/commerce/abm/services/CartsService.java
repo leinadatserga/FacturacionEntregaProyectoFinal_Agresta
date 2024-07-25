@@ -7,6 +7,7 @@ import com.commerce.abm.entities.Product;
 import com.commerce.abm.repositories.CartsRepository;
 import com.commerce.abm.repositories.ClientsRepository;
 import com.commerce.abm.repositories.ProductsRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,6 +59,7 @@ public class CartsService {
 
     @Transactional
     public Cart addProductToCart(Long clientId, Long productId, int quantity) {
+
         Optional<Client> clientOpt = clientsRepository.findById(clientId);
         if (clientOpt.isEmpty()) {
             throw new IllegalArgumentException("Client not found for client ID: " + clientId);
@@ -82,6 +84,9 @@ public class CartsService {
             throw new IllegalArgumentException("Product not found for product ID: " + productId);
         }
         Product product = productOpt.get();
+        if (product.getStock() < quantity) {
+            throw new IllegalArgumentException("Insufficient stock for product ID: " + productId);
+        }
 
         Optional<CartItem> cartItemOpt = cart.getItems().stream()
                 .filter(item -> item.getProduct().equals(product))
@@ -99,7 +104,35 @@ public class CartsService {
             cartItem.setPrice(product.getPrice() * quantity);
             cart.getItems().add(cartItem);
         }
+
+        product.setStock(product.getStock() - quantity);
+        productsRepository.save(product);
         return repository.save(cart);
+    }
+
+    public void removeProductFromCart(Long cartId, Long productId) {
+
+        Cart cart = repository.findById(cartId)
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found"));
+
+        CartItem cartItemToRemove = null;
+        for (CartItem item : cart.getItems()) {
+            if (item.getProduct().getId().equals(productId)) {
+                cartItemToRemove = item;
+                break;
+            }
+        }
+
+        if (cartItemToRemove == null) {
+            throw new EntityNotFoundException("Product not found in cart");
+        }
+
+        Product product = cartItemToRemove.getProduct();
+        product.setStock(product.getStock() + cartItemToRemove.getQuantity());
+        productsRepository.save(product);
+
+        cart.getItems().remove(cartItemToRemove);
+        repository.save(cart);
     }
 
     public void deleteCart(Long id) {

@@ -4,12 +4,14 @@ import com.commerce.abm.entities.Cart;
 import com.commerce.abm.services.CartsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -37,11 +39,11 @@ public class CartsController {
         return new ResponseEntity<>(carts, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Search a Cart", description = "Using the required Id, returns a specific Cart")
-    public ResponseEntity<Object> getCartById(@PathVariable Long id) {
+    @GetMapping("/{clid}")
+    @Operation(summary = "Search a Client Cart", description = "Using the Client Id, returns a specific Cart")
+    public ResponseEntity<Object> getProductsOfCartForClientId(@PathVariable Long clid) {
         try {
-            Optional<Cart> cart = cartsService.readCartById(id);
+            Optional<Cart> cart = cartsService.readCartById(clid);
             if (cart.isPresent()) {
                 return new ResponseEntity<>(cart.get(), HttpStatus.OK);
             } else {
@@ -63,6 +65,23 @@ public class CartsController {
             return new ResponseEntity<>(updatedCart, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @DeleteMapping("/{cid}/product")
+    public ResponseEntity<String> removeProductFromCart(@PathVariable Long cid, @RequestBody Map<String, Long> request) {
+        Long productId = request.get("productId");
+        if (productId == null) {
+            return ResponseEntity.badRequest().body("Product ID is required");
+        }
+
+        try {
+            System.out.println(cid);
+            System.out.println(productId);
+            cartsService.removeProductFromCart(cid, productId);
+            return ResponseEntity.ok("Product removed from cart");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
