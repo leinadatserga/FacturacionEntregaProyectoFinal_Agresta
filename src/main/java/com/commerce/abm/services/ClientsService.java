@@ -26,8 +26,7 @@ public class ClientsService {
             if (existingClient.isPresent()) { return repository.save(client); }
         }
         Cart cart = new Cart();
-        cart.setAmount(0);
-        cart.setPrice(0.0);
+        cart.setCartId(client.getId());
         cart.setClient(client);
         cartsRepository.save(cart);
         client.getCarts().add(cart);

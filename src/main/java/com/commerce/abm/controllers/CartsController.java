@@ -1,7 +1,6 @@
 package com.commerce.abm.controllers;
 
 import com.commerce.abm.entities.Cart;
-import com.commerce.abm.entities.Product;
 import com.commerce.abm.services.CartsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,12 +21,12 @@ public class CartsController {
 
     @PostMapping
     @Operation(summary = "Add a Cart", description = "Using the required data, create a new Cart")
-    public ResponseEntity<Object> createCart(@RequestBody Cart cart) {
+    public ResponseEntity<Cart> createCart(@RequestBody Cart cart) {
         try {
             Cart newCart = cartsService.newCart(cart);
             return new ResponseEntity<>(newCart, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -55,7 +54,7 @@ public class CartsController {
 
     @PostMapping(value = "/{clid}/{pid}/{q}")
     @Operation(summary = "Add a Product in a Cart", description = "Using the required Id, allows the user to add items by entering Product Id")
-    public ResponseEntity<?> addProductToCart(
+    public ResponseEntity<Object> addProductToCart(
             @PathVariable("clid") Long clid,
             @PathVariable("pid") Long pid,
             @PathVariable("q") int q) {
@@ -67,12 +66,17 @@ public class CartsController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{cid}")
     @Operation(summary = "Remove a Cart", description = "Using the required Id, delete a specific Cart")
-    public ResponseEntity<Object> deleteCart(@PathVariable Long id) {
+    public ResponseEntity<Object> deleteCart(@PathVariable Long cid) {
         try {
-            cartsService.deleteCart(id);
-            return new ResponseEntity<>("Cart deleted successfully", HttpStatus.OK);
+            Optional<Cart> cart = cartsService.readCartById(cid);
+            if (cart.isPresent()) {
+                cartsService.deleteCart(cid);
+                return new ResponseEntity<>("Cart deleted successfully", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Cart not found", HttpStatus.NOT_FOUND);
+            }
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
