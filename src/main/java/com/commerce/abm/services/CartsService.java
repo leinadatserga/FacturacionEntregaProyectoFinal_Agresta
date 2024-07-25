@@ -139,6 +139,21 @@ public class CartsService {
         if (id == null) {
             throw new IllegalArgumentException("Cart id, cannot be null");
         }
+
+        Optional<Cart> cartOpt = repository.findById(id);
+        if (cartOpt.isEmpty()) {
+            throw new IllegalArgumentException("Cart not found for id: " + id);
+        }
+        Cart cart = cartOpt.get();
+
+        if (!cart.getItems().isEmpty()) {
+            for (CartItem item : cart.getItems()) {
+                Product product = item.getProduct();
+                int newStock = product.getStock() + item.getQuantity();
+                product.setStock(newStock);
+                productsRepository.save(product);
+            }
+        }
         repository.deleteById(id);
     }
 }
