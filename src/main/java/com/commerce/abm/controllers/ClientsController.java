@@ -6,6 +6,9 @@ import com.commerce.abm.repositories.CartsRepository;
 import com.commerce.abm.repositories.ClientsRepository;
 import com.commerce.abm.services.ClientsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,7 +35,13 @@ public class ClientsController {
 
     @PostMapping(path = "/auth/register", consumes = "application/json", produces = "application/json")
     @Operation(summary = "Add a Client", description = "Using the required data, create a new Client")
-    public ResponseEntity<Client> create(@RequestBody Client dataClient) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Client created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data")
+    })
+    public ResponseEntity<Client> create(
+            @Parameter(description = "Client data to create a new client")
+            @RequestBody Client dataClient) {
         try {
             Client client = service.newClient(dataClient);
             return new ResponseEntity<>(client, HttpStatus.CREATED);
@@ -44,7 +53,14 @@ public class ClientsController {
 
     @PostMapping(path = "/{clid}/new-cart")
     @Operation(summary = "Create a New Cart for a Client", description = "Creates a new Cart for the specified Client after deleting the old one")
-    public ResponseEntity<Object> createNewCartForClient(@PathVariable Long clid) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Cart created successfully"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "400", description = "Client already has an active cart or other error")
+    })
+    public ResponseEntity<Object> createNewCartForClient(
+            @Parameter(description = "ID of the client to create a new cart for")
+            @PathVariable Long clid) {
         try {
             Optional<Client> clientOpt = clientsRepository.findById(clid);
             if (clientOpt.isEmpty()) {
@@ -70,6 +86,9 @@ public class ClientsController {
 
     @GetMapping(path = "/auth/clients")
     @Operation(summary = "Return all Clients", description = "Bring back a list of all Clients in JSON format")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of clients")
+    })
     public ResponseEntity <List<Client>> readAllClients() {
         try {
             List<Client> clients = service.readAllClients();
@@ -82,7 +101,14 @@ public class ClientsController {
 
     @GetMapping(path = "/clients/{clid}")
     @Operation(summary = "Search a Client", description = "Using the required Id, returns a specific Client")
-    public ResponseEntity<Optional<Client>> readClientsById(@PathVariable("clid") Long id) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved client"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid client ID")
+    })
+    public ResponseEntity<Optional<Client>> readClientsById(
+            @Parameter(description = "ID of the client to be searched")
+            @PathVariable("clid") Long id) {
         try {
             Optional<Client> client = service.readClientById(id);
             if (client.isPresent()) {
@@ -96,9 +122,56 @@ public class ClientsController {
         }
     }
 
+    @PutMapping("/auth/update/{clid}")
+    @Operation(summary = "Update a Client", description = "Update a client's details using the provided client ID and data")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Client updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid client ID or data")
+    })
+    public ResponseEntity<Client> updateClient(
+            @Parameter(description = "ID of the client to be updated")
+            @PathVariable("clid") Long clid,
+            @Parameter(description = "Client data to update the existing client")
+            @RequestBody Client clientDetails) {
+        try {
+            Optional<Client> clientOptional = clientsRepository.findById(clid);
+            if (clientOptional.isPresent()) {
+                Client existingClient = clientOptional.get();
+                if (clientDetails.getName() != null) {
+                    existingClient.setName(clientDetails.getName());
+                }
+                if (clientDetails.getName() != null) {
+                    existingClient.setName(clientDetails.getName());
+                }
+                if (clientDetails.getLastname() != null) {
+                    existingClient.setLastname(clientDetails.getLastname());
+                }
+                if (clientDetails.getDocnumber() != null) {
+                    existingClient.setDocnumber(clientDetails.getDocnumber());
+                }
+
+                Client updatedClient = clientsRepository.save(existingClient);
+                return new ResponseEntity<>(updatedClient, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception exception) {
+            System.err.println("Error updating client: " + exception.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @DeleteMapping("/auth/drop/{clid}")
     @Operation(summary = "Remove a Client", description = "Using the required Id, delete a specific Client")
-    public ResponseEntity <Map<String, Object>> deleteClient(@PathVariable("clid") Long id) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Client deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Client not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid client ID")
+    })
+    public ResponseEntity <Map<String, Object>> deleteClient(
+            @Parameter(description = "ID of the client to be deleted")
+            @PathVariable("clid") Long id) {
         try {
             service.deleteClient(id);
             Map<String, Object> response = new HashMap<>();

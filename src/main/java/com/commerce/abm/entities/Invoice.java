@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Invoices")
@@ -22,4 +23,7 @@ public class Invoice {
     @JoinColumn(name = "client_id")
     @JsonIgnore
     @Getter @Setter private Client client;
+
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Getter @Setter private List<InvoiceItem> items;
 }

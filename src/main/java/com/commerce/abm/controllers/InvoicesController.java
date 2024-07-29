@@ -1,11 +1,11 @@
 package com.commerce.abm.controllers;
 
-import com.commerce.abm.entities.Cart;
-import com.commerce.abm.entities.Client;
 import com.commerce.abm.entities.Invoice;
 import com.commerce.abm.services.ClientsService;
 import com.commerce.abm.services.InvoicesService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -27,6 +28,10 @@ public class InvoicesController {
 
     @GetMapping
     @Operation(summary = "Return all Invoices", description = "Bring back a list of all Invoices in JSON format")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of invoices"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public ResponseEntity<List<Invoice>> getAllInvoices() {
         try {
             List<Invoice> invoices = invoicesService.readAllInvoices();
@@ -36,11 +41,11 @@ public class InvoicesController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{iid}")
     @Operation(summary = "Search an Invoice", description = "Using the required Id, returns a specific Invoice")
-    public ResponseEntity<Invoice> getInvoiceById(@PathVariable Long id) {
+    public ResponseEntity<Invoice> getInvoiceById(@PathVariable Long iid) {
         try {
-            Optional<Invoice> invoice = invoicesService.readInvoiceById(id);
+            Optional<Invoice> invoice = invoicesService.readInvoiceById(iid);
             if (invoice.isPresent()) {
                 return new ResponseEntity<>(invoice.get(), HttpStatus.OK);
             } else {
@@ -51,34 +56,56 @@ public class InvoicesController {
         }
     }
 
-    @PostMapping
-    @Operation(summary = "Add a Invoice", description = "Using the required data, create a new Invoice")
-    public ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
+    @GetMapping("/{clid}")
+    @Operation(summary = "Get the latest Invoice by Client ID", description = "Returns the latest Invoice created for a specific Client")
+    public ResponseEntity<Invoice> getLatestInvoiceByClientId(@PathVariable Long clid) {
         try {
-            Optional<Client> clientOptional = clientsService.readClientById(invoice.getClient().getId());
-            if (clientOptional.isPresent()) {
-                invoice.setClient(clientOptional.get());
-                Invoice savedInvoice = invoicesService.newInvoice(invoice);
-                return new ResponseEntity<>(savedInvoice, HttpStatus.CREATED);
+            Optional<Invoice> invoiceOptional = invoicesService.readLatestInvoiceByClientId(clid);
+            if (invoiceOptional.isPresent()) {
+                return new ResponseEntity<>(invoiceOptional.get(), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update a Invoice", description = "Using the required Id, allows the user to make changes by entering new data")
-    public ResponseEntity<Invoice> updateInvoice(@PathVariable Long id, @RequestBody Invoice invoiceDetails) {
+    @PostMapping
+    @Operation(summary = "Create an Invoice from a Cart", description = "Using the cart data and Client id, create a new Invoice")
+    public ResponseEntity<Object> createInvoiceFromCart(@RequestBody Map<String, Long> clid) {
+        Long clientId = clid.get("clientId");
+        if (clientId == null) {
+            return ResponseEntity.badRequest().body("Client ID is required");
+        }
+
         try {
-            Optional<Invoice> invoiceOptional = invoicesService.readInvoiceById(id);
+            Invoice invoice = invoicesService.createInvoiceForClient(clientId);
+            return new ResponseEntity<>(invoice, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PutMapping("/update/{clid}")
+    @Operation(summary = "Update a Invoice", description = "Using the required Id, allows the user to make changes by entering new data")
+    public ResponseEntity<Invoice> updateInvoice(@PathVariable Long clid, @RequestBody Invoice invoiceDetails) {
+        try {
+            Optional<Invoice> invoiceOptional = invoicesService.readInvoiceByClientId(clid);
             if (invoiceOptional.isPresent()) {
                 Invoice invoice = invoiceOptional.get();
-                invoice.setCreatedAt(invoiceDetails.getCreatedAt());
-                invoice.setTotal(invoiceDetails.getTotal());
-                invoice.setClient(invoiceDetails.getClient());
-                return new ResponseEntity<>(invoicesService.newInvoice(invoice), HttpStatus.OK);
+                if (invoiceDetails.getCreatedAt() != null) {
+                    invoice.setCreatedAt(invoiceDetails.getCreatedAt());
+                }
+                if (invoiceDetails.getTotal() != null) {
+                    invoice.setTotal(invoiceDetails.getTotal());
+                }
+                if (invoiceDetails.getClient() != null) {
+                    invoice.setClient(invoiceDetails.getClient());
+                }
+
+                Invoice updatedInvoice = invoicesService.saveInvoice(invoice);
+                return new ResponseEntity<>(updatedInvoice, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
