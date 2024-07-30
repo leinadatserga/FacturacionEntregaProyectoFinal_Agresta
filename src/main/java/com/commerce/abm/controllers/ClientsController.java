@@ -7,6 +7,9 @@ import com.commerce.abm.repositories.ClientsRepository;
 import com.commerce.abm.services.ClientsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,9 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -34,10 +35,26 @@ public class ClientsController {
     private CartsRepository cartsRepository;
 
     @PostMapping(path = "/auth/register", consumes = "application/json", produces = "application/json")
-    @Operation(summary = "Add a Client", description = "Using the required data, create a new Client")
+    @Operation(
+            summary = "Add a Client",
+            description = "Using the required data, create a new Client",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Client.class),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"name\": \"Daniel\",\n" +
+                                            "  \"lastname\": \"Agresta\",\n" +
+                                            "  \"docnumber\": \"12345678\"\n" +
+                                            "}"
+                            )
+                    )
+            )
+    )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Client created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data")
+            @ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content)
     })
     public ResponseEntity<Client> create(
             @Parameter(description = "Client data to create a new client")
@@ -52,11 +69,15 @@ public class ClientsController {
     }
 
     @PostMapping(path = "/{clid}/new-cart")
-    @Operation(summary = "Create a New Cart for a Client", description = "Creates a new Cart for the specified Client after deleting the old one")
+    @Operation(
+            summary = "Create a New Cart for a Client",
+            description = "Creates a new Cart for the specified Client after deleting the old one",
+            parameters = @Parameter(name = "clid", description = "ID of the client to create a new cart for", required = true)
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Cart created successfully"),
-            @ApiResponse(responseCode = "404", description = "Client not found"),
-            @ApiResponse(responseCode = "400", description = "Client already has an active cart or other error")
+            @ApiResponse(responseCode = "201", description = "Cart created successfully", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Client not found", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Client already has an active cart or other error", content = @Content)
     })
     public ResponseEntity<Object> createNewCartForClient(
             @Parameter(description = "ID of the client to create a new cart for")
@@ -85,10 +106,29 @@ public class ClientsController {
     }
 
     @GetMapping(path = "/auth/clients")
-    @Operation(summary = "Return all Clients", description = "Bring back a list of all Clients in JSON format")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of clients")
-    })
+    @Operation(
+            summary = "Return all Clients",
+            description = "Bring back a list of all Clients in JSON format",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of clients",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Client.class),
+                                    examples = @ExampleObject(
+                                            value = "[\n" +
+                                                    "  {\n" +
+                                                    "    \"id\": 1,\n" +
+                                                    "    \"name\": \"Daniel\",\n" +
+                                                    "    \"lastname\": \"Agresta\",\n" +
+                                                    "    \"docnumber\": \"12345678\"\n" +
+                                                    "  }\n" +
+                                                    "]"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity <List<Client>> readAllClients() {
         try {
             List<Client> clients = service.readAllClients();
@@ -100,12 +140,30 @@ public class ClientsController {
     }
 
     @GetMapping(path = "/clients/{clid}")
-    @Operation(summary = "Search a Client", description = "Using the required Id, returns a specific Client")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved client"),
-            @ApiResponse(responseCode = "404", description = "Client not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid client ID")
-    })
+    @Operation(
+            summary = "Search a Client",
+            description = "Using the required Id, returns a specific Client",
+            parameters = @Parameter(name = "clid", description = "ID of the client to be searched", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved client",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Client.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"id\": 1,\n" +
+                                                    "  \"name\": \"Daniel\",\n" +
+                                                    "  \"lastname\": \"Agresta\",\n" +
+                                                    "  \"docnumber\": \"12345678\"\n" +
+                                                    "}"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "404", description = "Client not found", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid client ID", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Optional<Client>> readClientsById(
             @Parameter(description = "ID of the client to be searched")
             @PathVariable("clid") Long id) {
@@ -123,12 +181,30 @@ public class ClientsController {
     }
 
     @PutMapping("/auth/update/{clid}")
-    @Operation(summary = "Update a Client", description = "Update a client's details using the provided client ID and data")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Client updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Client not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid client ID or data")
-    })
+    @Operation(
+            summary = "Update a Client",
+            description = "Update a client's details using the provided client ID and data",
+            parameters = @Parameter(name = "clid", description = "ID of the client to be updated", required = true),
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Client.class),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"name\": \"Mauricio\",\n" +
+                                            "  \"lastname\": \"Saravia\",\n" +
+                                            "  \"docnumber\": \"87654321\"\n" +
+                                            "}"
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Client updated successfully"),
+                    @ApiResponse(responseCode = "404", description = "Client not found", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid client ID or data", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Client> updateClient(
             @Parameter(description = "ID of the client to be updated")
             @PathVariable("clid") Long clid,
@@ -163,23 +239,30 @@ public class ClientsController {
     }
 
     @DeleteMapping("/auth/drop/{clid}")
-    @Operation(summary = "Remove a Client", description = "Using the required Id, delete a specific Client")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Client deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Client not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid client ID")
-    })
-    public ResponseEntity <Map<String, Object>> deleteClient(
+    @Operation(
+            summary = "Remove a Client",
+            description = "Using the required Id, delete a specific Client.",
+            parameters = @Parameter(name = "clid", description = "ID of the client to be deleted", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Client deleted successfully"),
+                    @ApiResponse(responseCode = "404", description = "Client not found", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid client ID", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
+    public ResponseEntity<String> deleteClient(
             @Parameter(description = "ID of the client to be deleted")
             @PathVariable("clid") Long id) {
         try {
-            service.deleteClient(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Client deleted successfully");
-            return ResponseEntity.ok(response);
+            Optional<Client> clientOptional = clientsRepository.findById(id);
+            if (clientOptional.isPresent()) {
+                clientsRepository.deleteById(id);
+                return ResponseEntity.ok("Client deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Client not found");
+            }
         } catch (Exception exception) {
-            System.err.println("Error deleting client: " + exception.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
         }
     }
 }

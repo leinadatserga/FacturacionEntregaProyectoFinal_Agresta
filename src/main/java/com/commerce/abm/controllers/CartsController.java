@@ -5,6 +5,9 @@ import com.commerce.abm.services.CartsCleanUpService;
 import com.commerce.abm.services.CartsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,28 +31,30 @@ public class CartsController {
     @Autowired
     private CartsCleanUpService cartsCleanUpService;
 
-    @PostMapping
-    @Operation(summary = "Add a Cart", description = "Using the required data, create a new Cart")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Cart created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data")
-    })
-    public ResponseEntity<Cart> createCart(
-            @Parameter(description = "Request body containing the details of the cart to be created")
-            @RequestBody Cart cart) {
-        try {
-            Cart newCart = cartsService.newCart(cart);
-            return new ResponseEntity<>(newCart, HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     @GetMapping
     @Operation(summary = "Return all Carts", description = "Bring back a list of all Carts in JSON format")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of carts"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of carts",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Cart.class),
+                            examples = @ExampleObject(
+                                    value = "[\n" +
+                                            "  {\n" +
+                                            "    \"id\": 1,\n" +
+                                            "    \"clientId\": 1001,\n" +
+                                            "    \"products\": [\n" +
+                                            "      {\n" +
+                                            "        \"productId\": 5001,\n" +
+                                            "        \"quantity\": 2\n" +
+                                            "      }\n" +
+                                            "    ]\n" +
+                                            "  }\n" +
+                                            "]"
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public ResponseEntity<List<Cart>> getAllCarts() {
         List<Cart> carts = cartsService.readAllCarts();
@@ -57,12 +62,33 @@ public class CartsController {
     }
 
     @GetMapping("/{clid}")
-    @Operation(summary = "Search a Client Cart", description = "Using the Client Id, returns a specific Cart")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved cart"),
-            @ApiResponse(responseCode = "404", description = "Cart not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid client ID")
-    })
+    @Operation(
+            summary = "Search a Client Cart",
+            description = "Using the Client Id, returns a specific Cart",
+            parameters = @Parameter(name = "clid", description = "ID of the client whose cart is to be retrieved", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved cart",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Cart.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"id\": 1,\n" +
+                                                    "  \"clientId\": 1001,\n" +
+                                                    "  \"products\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"productId\": 5001,\n" +
+                                                    "      \"quantity\": 2\n" +
+                                                    "    }\n" +
+                                                    "  ]\n" +
+                                                    "}"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "404", description = "Cart not found"),
+                    @ApiResponse(responseCode = "400", description = "Invalid client ID")
+            }
+    )
     public ResponseEntity<Object> getProductsOfCartForClientId(
             @Parameter(description = "ID of the client whose cart is to be retrieved")
             @PathVariable Long clid) {
@@ -79,12 +105,37 @@ public class CartsController {
     }
 
     @PostMapping(value = "/{clid}/{pid}/{q}")
-    @Operation(summary = "Add a Product in a Cart", description = "Using the required Id, allows the user to add items by entering Product Id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product added to cart successfully"),
-            @ApiResponse(responseCode = "404", description = "Cart or product not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data")
-    })
+    @Operation(
+            summary = "Add a Product in a Cart",
+            description = "Add a specific product to a cart using client ID, product ID, and quantity.",
+            parameters = {
+                    @Parameter(name = "clid", description = "ID of the client whose cart is to be updated", required = true),
+                    @Parameter(name = "pid", description = "ID of the product to be added to the cart", required = true),
+                    @Parameter(name = "q", description = "Quantity of the product to be added", required = true)
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Product added to cart successfully",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Cart.class),
+                                    examples = @ExampleObject(
+                                            value = "{\n" +
+                                                    "  \"id\": 1,\n" +
+                                                    "  \"clientId\": 1001,\n" +
+                                                    "  \"products\": [\n" +
+                                                    "    {\n" +
+                                                    "      \"productId\": 5001,\n" +
+                                                    "      \"quantity\": 5\n" +
+                                                    "    }\n" +
+                                                    "  ]\n" +
+                                                    "}"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "404", description = "Cart or product not found"),
+                    @ApiResponse(responseCode = "400", description = "Invalid input data")
+            }
+    )
     public ResponseEntity<Object> addProductToCart(
             @Parameter(description = "ID of the client whose cart is to be updated")
             @PathVariable("clid") Long clid,
@@ -101,12 +152,27 @@ public class CartsController {
     }
 
     @DeleteMapping("/{cid}/product")
-    @Operation(summary = "Remove a Product from a Cart", description = "Remove a specific product from the cart using product ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product removed from cart successfully"),
-            @ApiResponse(responseCode = "400", description = "Product ID is required or invalid"),
-            @ApiResponse(responseCode = "404", description = "Cart or product not found")
-    })
+    @Operation(
+            summary = "Remove a Product from a Cart",
+            description = "Remove a specific product from the cart using product ID",
+            parameters = @Parameter(name = "cid", description = "ID of the cart to remove the product from", required = true),
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"productId\": 5001\n" +
+                                            "}"
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Product removed from cart successfully"),
+                    @ApiResponse(responseCode = "400", description = "Product ID is required or invalid"),
+                    @ApiResponse(responseCode = "404", description = "Cart or product not found")
+            }
+    )
     public ResponseEntity<String> removeProductFromCart(
             @Parameter(description = "ID of the cart to remove the product from")
             @PathVariable Long cid,
@@ -116,10 +182,7 @@ public class CartsController {
         if (productId == null) {
             return ResponseEntity.badRequest().body("Product ID is required");
         }
-
         try {
-            System.out.println(cid);
-            System.out.println(productId);
             cartsService.removeProductFromCart(cid, productId);
             return ResponseEntity.ok("Product removed from cart");
         } catch (EntityNotFoundException e) {
@@ -128,12 +191,16 @@ public class CartsController {
     }
 
     @DeleteMapping("/{cid}")
-    @Operation(summary = "Remove a Cart", description = "Using the required Id, delete a specific Cart")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cart deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Cart not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid cart ID")
-    })
+    @Operation(
+            summary = "Remove a Cart",
+            description = "Using the required Id, delete a specific Cart",
+            parameters = @Parameter(name = "cid", description = "ID of the cart to be deleted", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Cart deleted successfully"),
+                    @ApiResponse(responseCode = "404", description = "Cart not found"),
+                    @ApiResponse(responseCode = "400", description = "Invalid cart ID")
+            }
+    )
     public ResponseEntity<Object> deleteCart(
             @Parameter(description = "ID of the cart to be deleted")
             @PathVariable Long cid) {
@@ -151,11 +218,14 @@ public class CartsController {
     }
 
     @DeleteMapping("/cleanup")
-    @Operation(summary = "Remove inactive carts", description = "Manually trigger the removal of inactive carts")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Inactive carts removed successfully"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Remove inactive carts",
+            description = "Manually trigger the removal of inactive carts",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Inactive carts removed successfully"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<String> cleanupCarts() {
         try {
             boolean cartsRemoved = cartsCleanUpService.removeInactiveCarts();

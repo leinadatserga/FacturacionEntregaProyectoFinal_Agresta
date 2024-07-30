@@ -5,8 +5,10 @@ import com.commerce.abm.services.ClientsService;
 import com.commerce.abm.services.InvoicesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,11 +30,17 @@ public class InvoicesController {
     private ClientsService clientsService;
 
     @GetMapping
-    @Operation(summary = "Return all Invoices", description = "Bring back a list of all Invoices in JSON format")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved list of invoices"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Return all Invoices",
+            description = "Bring back a list of all Invoices in JSON format",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of invoices", content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class)
+                    )),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<List<Invoice>> getAllInvoices() {
         try {
             List<Invoice> invoices = invoicesService.readAllInvoices();
@@ -43,12 +51,19 @@ public class InvoicesController {
     }
 
     @GetMapping("/id/{iid}")
-    @Operation(summary = "Search an Invoice", description = "Using the required Id, returns a specific Invoice")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved invoice"),
-            @ApiResponse(responseCode = "404", description = "Invoice not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Search an Invoice",
+            description = "Using the required Id, returns a specific Invoice",
+            parameters = @Parameter(name = "iid", description = "ID of the invoice to be retrieved", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved invoice", content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class)
+                    )),
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Invoice> getInvoiceById(
             @Parameter(description = "ID of the invoice to be retrieved")
             @PathVariable Long iid) {
@@ -65,12 +80,19 @@ public class InvoicesController {
     }
 
     @GetMapping("/{clid}")
-    @Operation(summary = "Get the latest Invoice by Client ID", description = "Returns the latest Invoice created for a specific Client")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved latest invoice"),
-            @ApiResponse(responseCode = "404", description = "Client or invoice not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Get the latest Invoice by Client ID",
+            description = "Returns the latest Invoice created for a specific Client",
+            parameters = @Parameter(name = "clid", description = "ID of the client to get the latest invoice for", required = true),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved latest invoice", content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class)
+                    )),
+                    @ApiResponse(responseCode = "404", description = "Client or invoice not found", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Invoice> getLatestInvoiceByClientId(
             @Parameter(description = "ID of the client to get the latest invoice for")
             @PathVariable Long clid) {
@@ -87,12 +109,28 @@ public class InvoicesController {
     }
 
     @PostMapping
-    @Operation(summary = "Create an Invoice from a Cart", description = "Using the cart data and Client id, create a new Invoice")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Invoice created successfully"),
-            @ApiResponse(responseCode = "400", description = "Client ID is required or invalid"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Create an Invoice from a Cart",
+            description = "Using the cart data and Client id, create a new Invoice",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"clientId\": 1\n" +
+                                            "}"
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Invoice created successfully", content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class)
+                    )),
+                    @ApiResponse(responseCode = "400", description = "Client ID is required or invalid", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Object> createInvoiceFromCart(
             @Parameter(description = "Request body containing the client ID to create an invoice for")
             @RequestBody Map<String, Long> clid) {
@@ -110,13 +148,34 @@ public class InvoicesController {
     }
 
     @PutMapping("/update/{clid}")
-    @Operation(summary = "Update a Invoice", description = "Using the required Id, allows the user to make changes by entering new data")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Invoice updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Invoice not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid data provided"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Update a Invoice",
+            description = "Using the required Id, allows the user to make changes by entering new data",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"createdAt\": \"2023-07-30T12:34:56\",\n" +
+                                            "  \"total\": 100.00,\n" +
+                                            "  \"client\": {\n" +
+                                            "    \"id\": 1\n" +
+                                            "  }\n" +
+                                            "}"
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Invoice updated successfully", content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Invoice.class)
+                    )),
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid data provided", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Invoice> updateInvoice(
             @Parameter(description = "ID of the client whose invoice is to be updated")
             @PathVariable Long clid,
@@ -147,12 +206,15 @@ public class InvoicesController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Remove a Invoice", description = "Using the required Id, delete a specific Invoice")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Invoice deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Invoice not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
+    @Operation(
+            summary = "Remove a Invoice",
+            description = "Using the required Id, delete a specific Invoice",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Invoice deleted successfully", content = @Content),
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
     public ResponseEntity<Void> deleteInvoice(
             @Parameter(description = "ID of the invoice to be deleted")
             @PathVariable Long id) {

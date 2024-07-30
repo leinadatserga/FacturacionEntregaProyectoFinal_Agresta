@@ -36,7 +36,7 @@ public class CartItem {
     private Integer quantity;
 
     @Getter @Setter
-    @Schema(description = "Price of the product", example = "29.99")
+    @Schema(description = "Price of the product, or total if quantity > 1", example = "29.99")
     private Double price;
 
     @JsonProperty("product_id")
