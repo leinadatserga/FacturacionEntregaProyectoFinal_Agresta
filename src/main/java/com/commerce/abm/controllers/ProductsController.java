@@ -35,7 +35,7 @@ public class ProductsController {
                             )
                     )
             ),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public ResponseEntity<Product> newProduct(
             @Parameter(description = "Request body containing the details of the product to be created")
@@ -79,15 +79,15 @@ public class ProductsController {
     @GetMapping("/{pid}")
     @Operation(summary = "Search a Product", description = "Using the required Id, returns a specific Product")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved product"),
-            @ApiResponse(responseCode = "404", description = "Product not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved product", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Product.class))),
+            @ApiResponse(responseCode = "404", description = "Product not found", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public Optional<Product> readProductById(
-            @Parameter(description = "ID of the product to be retrieved")
-            @PathVariable("id") Long id) {
+            @Parameter(description = "ID of the product to be retrieved", required = true, example = "1")
+            @PathVariable("pid") Long pid) {
         try {
-            return service.readProductById(id);
+            return service.readProductById(pid);
         } catch (Exception exception) {
             System.out.println(exception);
             throw new RuntimeException("Error in Product obtain");
@@ -97,15 +97,22 @@ public class ProductsController {
     @PutMapping("/{pid}")
     @Operation(summary = "Update a Product", description = "Using the required Id and data, update a specific Product")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Product updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Product.class))),
+            @ApiResponse(responseCode = "404", description = "Product not found", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public ResponseEntity<Product> updateProduct(
-            @Parameter(description = "ID of the product to be updated")
+            @Parameter(description = "ID of the product to be updated", required = true, example = "1")
             @PathVariable("pid") Long id,
-            @Parameter(description = "Request body containing the updated details of the product")
-            @RequestBody Product dataProduct) {
+            @Parameter(description = "Request body containing the updated details of the product", required = true)
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Product to be updated, all data or especific field",
+                    content = @Content(mediaType = "application/json", examples = {
+                            @ExampleObject(name = "Example 1", value = "{\"product\": \"Dome camera\", \"price\": 999.99, \"stock\": 99}")
+                    })
+            )
+            Product dataProduct) {
         try {
             Optional<Product> existingProduct = service.readProductById(id);
             if (existingProduct.isPresent()) {
@@ -123,14 +130,14 @@ public class ProductsController {
     @DeleteMapping("/{pid}")
     @Operation(summary = "Remove a Product", description = "Using the required Id, delete a specific Product")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Product deleted successfully"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
+            @ApiResponse(responseCode = "200", description = "Product deleted successfully", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public void deleteProduct(
             @Parameter(description = "ID of the product to be deleted")
-            @PathVariable("pid") Long id) {
+            @PathVariable("pid") Long pid) {
         try {
-            service.deleteProduct(id);
+            service.deleteProduct(pid);
         } catch (Exception exception) {
             System.out.println(exception);
             throw new RuntimeException("Error in Product deletion");
