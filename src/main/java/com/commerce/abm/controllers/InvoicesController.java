@@ -4,6 +4,7 @@ import com.commerce.abm.entities.Invoice;
 import com.commerce.abm.services.ClientsService;
 import com.commerce.abm.services.InvoicesService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,7 +44,14 @@ public class InvoicesController {
 
     @GetMapping("/id/{iid}")
     @Operation(summary = "Search an Invoice", description = "Using the required Id, returns a specific Invoice")
-    public ResponseEntity<Invoice> getInvoiceById(@PathVariable Long iid) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved invoice"),
+            @ApiResponse(responseCode = "404", description = "Invoice not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Invoice> getInvoiceById(
+            @Parameter(description = "ID of the invoice to be retrieved")
+            @PathVariable Long iid) {
         try {
             Optional<Invoice> invoice = invoicesService.readInvoiceById(iid);
             if (invoice.isPresent()) {
@@ -58,7 +66,14 @@ public class InvoicesController {
 
     @GetMapping("/{clid}")
     @Operation(summary = "Get the latest Invoice by Client ID", description = "Returns the latest Invoice created for a specific Client")
-    public ResponseEntity<Invoice> getLatestInvoiceByClientId(@PathVariable Long clid) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved latest invoice"),
+            @ApiResponse(responseCode = "404", description = "Client or invoice not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Invoice> getLatestInvoiceByClientId(
+            @Parameter(description = "ID of the client to get the latest invoice for")
+            @PathVariable Long clid) {
         try {
             Optional<Invoice> invoiceOptional = invoicesService.readLatestInvoiceByClientId(clid);
             if (invoiceOptional.isPresent()) {
@@ -73,7 +88,14 @@ public class InvoicesController {
 
     @PostMapping
     @Operation(summary = "Create an Invoice from a Cart", description = "Using the cart data and Client id, create a new Invoice")
-    public ResponseEntity<Object> createInvoiceFromCart(@RequestBody Map<String, Long> clid) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Invoice created successfully"),
+            @ApiResponse(responseCode = "400", description = "Client ID is required or invalid"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Object> createInvoiceFromCart(
+            @Parameter(description = "Request body containing the client ID to create an invoice for")
+            @RequestBody Map<String, Long> clid) {
         Long clientId = clid.get("clientId");
         if (clientId == null) {
             return ResponseEntity.badRequest().body("Client ID is required");
@@ -89,7 +111,17 @@ public class InvoicesController {
 
     @PutMapping("/update/{clid}")
     @Operation(summary = "Update a Invoice", description = "Using the required Id, allows the user to make changes by entering new data")
-    public ResponseEntity<Invoice> updateInvoice(@PathVariable Long clid, @RequestBody Invoice invoiceDetails) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invoice updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Invoice not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid data provided"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Invoice> updateInvoice(
+            @Parameter(description = "ID of the client whose invoice is to be updated")
+            @PathVariable Long clid,
+            @Parameter(description = "Request body containing the new invoice details")
+            @RequestBody Invoice invoiceDetails) {
         try {
             Optional<Invoice> invoiceOptional = invoicesService.readInvoiceByClientId(clid);
             if (invoiceOptional.isPresent()) {
@@ -116,7 +148,14 @@ public class InvoicesController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Remove a Invoice", description = "Using the required Id, delete a specific Invoice")
-    public ResponseEntity<Void> deleteInvoice(@PathVariable Long id) {
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Invoice deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Invoice not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public ResponseEntity<Void> deleteInvoice(
+            @Parameter(description = "ID of the invoice to be deleted")
+            @PathVariable Long id) {
         try {
             Optional<Invoice> invoice = invoicesService.readInvoiceById(id);
             if (invoice.isPresent()) {
