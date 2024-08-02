@@ -32,13 +32,14 @@ public class InvoicesController {
     @GetMapping
     @Operation(
             summary = "Return all Invoices",
+            tags = {"Invoices paths definitions"},
             description = "Bring back a list of all Invoices in JSON format",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of invoices", content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class)
                     )),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<List<Invoice>> getAllInvoices() {
@@ -53,6 +54,7 @@ public class InvoicesController {
     @GetMapping("/id/{iid}")
     @Operation(
             summary = "Search an Invoice",
+            tags = {"Invoices paths definitions"},
             description = "Using the required Id, returns a specific Invoice",
             parameters = @Parameter(name = "iid", description = "ID of the invoice to be retrieved", required = true),
             responses = {
@@ -60,8 +62,8 @@ public class InvoicesController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class)
                     )),
-                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Invoice not found"))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<Invoice> getInvoiceById(
@@ -82,6 +84,7 @@ public class InvoicesController {
     @GetMapping("/{clid}")
     @Operation(
             summary = "Get the latest Invoice by Client ID",
+            tags = {"Invoices paths definitions"},
             description = "Returns the latest Invoice created for a specific Client",
             parameters = @Parameter(name = "clid", description = "ID of the client to get the latest invoice for", required = true),
             responses = {
@@ -89,8 +92,8 @@ public class InvoicesController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class)
                     )),
-                    @ApiResponse(responseCode = "404", description = "Client or invoice not found", content = @Content),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "404", description = "Client or invoice not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Client or Invoice not found"))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<Invoice> getLatestInvoiceByClientId(
@@ -111,14 +114,16 @@ public class InvoicesController {
     @PostMapping
     @Operation(
             summary = "Create an Invoice from a Cart",
+            tags = {"Invoices paths definitions"},
             description = "Using the cart data and Client id, create a new Invoice",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    value = "{\n" +
-                                            "  \"clientId\": 1\n" +
-                                            "}"
+                                    value = """
+                                            {
+                                              "clientId": 1
+                                            }"""
                             )
                     )
             ),
@@ -127,8 +132,8 @@ public class InvoicesController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class)
                     )),
-                    @ApiResponse(responseCode = "400", description = "Client ID is required or invalid", content = @Content),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "400", description = "Client ID is required or invalid", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Client ID is required or invalid"))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<Object> createInvoiceFromCart(
@@ -150,19 +155,27 @@ public class InvoicesController {
     @PutMapping("/update/{clid}")
     @Operation(
             summary = "Update a Invoice",
+            tags = {"Invoices paths definitions"},
             description = "Using the required Id, allows the user to make changes by entering new data",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class),
                             examples = @ExampleObject(
-                                    value = "{\n" +
-                                            "  \"createdAt\": \"2023-07-30T12:34:56\",\n" +
-                                            "  \"total\": 100.00,\n" +
-                                            "  \"client\": {\n" +
-                                            "    \"id\": 1\n" +
-                                            "  }\n" +
-                                            "}"
+                                    value = """
+                                            {
+                                            "invoiceId": 37,
+                                            "createdAt": "2023-07-30T12:34:56",
+                                            "total": 167.60,
+                                            "items": [
+                                                {
+                                                    "invoiceItemId": 1,
+                                                    "productId": 5,
+                                                    "quantity": 3,
+                                                    "price": 167.60
+                                                }
+                                            ]
+                                            }"""
                             )
                     )
             ),
@@ -171,9 +184,9 @@ public class InvoicesController {
                             mediaType = "application/json",
                             schema = @Schema(implementation = Invoice.class)
                     )),
-                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
-                    @ApiResponse(responseCode = "400", description = "Invalid data provided", content = @Content),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Invoice not found"))),
+                    @ApiResponse(responseCode = "400", description = "Invalid data provided", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Invalid data provided"))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<Invoice> updateInvoice(
@@ -208,11 +221,12 @@ public class InvoicesController {
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Remove a Invoice",
+            tags = {"Invoices paths definitions"},
             description = "Using the required Id, delete a specific Invoice",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Invoice deleted successfully", content = @Content),
-                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content),
-                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+                    @ApiResponse(responseCode = "204", description = "Invoice deleted successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Invoice deleted successfully"))),
+                    @ApiResponse(responseCode = "404", description = "Invoice not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Invoice not found"))),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "Internal server error")))
             }
     )
     public ResponseEntity<Void> deleteInvoice(

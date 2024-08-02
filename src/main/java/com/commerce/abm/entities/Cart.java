@@ -39,4 +39,9 @@ public class Cart {
     @Getter @Setter
     @Schema(description = "List of items in the cart")
     private List<CartItem> items = new ArrayList<>();
+
+    @PrePersist @PreUpdate
+    private void updateTimestamp() {
+        this.lastUpdated = LocalDateTime.now();
+    }
 }

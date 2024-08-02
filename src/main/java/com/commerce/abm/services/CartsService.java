@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,16 +68,16 @@ public class CartsService {
         Client client = clientOpt.get();
 
         Optional<Cart> cartOpt = repository.findById(clientId);
-        Cart cart;
+        Cart cartAdd;
         if (cartOpt.isPresent()) {
-            cart = cartOpt.get();
+            cartAdd = cartOpt.get();
         } else {
-            cart = new Cart();
-            cart.setClient(client);
-            cart.setDelivered(false);
-            cart.setCartId(client.getId());
-            cart.setItems(new ArrayList<>());
-            cart = repository.save(cart);
+            cartAdd = new Cart();
+            cartAdd.setClient(client);
+            cartAdd.setDelivered(false);
+            cartAdd.setCartId(client.getId());
+            cartAdd.setItems(new ArrayList<>());
+            cartAdd = repository.save(cartAdd);
         }
 
         Optional<Product> productOpt = productsRepository.findById(productId);
@@ -88,7 +89,7 @@ public class CartsService {
             throw new IllegalArgumentException("Insufficient stock for product ID: " + productId);
         }
 
-        Optional<CartItem> cartItemOpt = cart.getItems().stream()
+        Optional<CartItem> cartItemOpt = cartAdd.getItems().stream()
                 .filter(item -> item.getProduct().equals(product))
                 .findFirst();
         CartItem cartItem;
@@ -98,16 +99,17 @@ public class CartsService {
             cartItem.setPrice(cartItem.getPrice() + (product.getPrice() * quantity));
         } else {
             cartItem = new CartItem();
-            cartItem.setCart(cart);
+            cartItem.setCart(cartAdd);
             cartItem.setProduct(product);
             cartItem.setQuantity(quantity);
             cartItem.setPrice(product.getPrice() * quantity);
-            cart.getItems().add(cartItem);
+            cartAdd.getItems().add(cartItem);
         }
 
         product.setStock(product.getStock() - quantity);
         productsRepository.save(product);
-        return repository.save(cart);
+        cartAdd.setLastUpdated(LocalDateTime.now());
+        return repository.save(cartAdd);
     }
 
     public void removeProductFromCart(Long cartId, Long productId) {
@@ -132,6 +134,7 @@ public class CartsService {
         productsRepository.save(product);
 
         cart.getItems().remove(cartItemToRemove);
+        cart.setLastUpdated(LocalDateTime.now());
         repository.save(cart);
     }
 

@@ -35,7 +35,7 @@ public class InvoicesService {
         invoice.setItems(cart.getItems().stream().map(cartItem -> {
             InvoiceItem invoiceItem = new InvoiceItem();
             invoiceItem.setInvoice(invoice);
-            invoiceItem.setProduct(cartItem.getProduct());
+            invoiceItem.setProductId(cartItem.getProductId());
             invoiceItem.setQuantity(cartItem.getQuantity());
             invoiceItem.setPrice(cartItem.getPrice());
             return invoiceItem;

@@ -23,12 +23,9 @@ public class InvoiceItem {
     @Schema(description = "The invoice associated with the invoice item")
     private Invoice invoice;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    @JsonIgnore
     @Getter @Setter
-    @Schema(description = "The product associated with the invoice item")
-    private Product product;
+    @Schema(description = "Id of the product", example = "2")
+    private Long productId;
 
     @Getter @Setter
     @Schema(description = "Quantity of the product", example = "2")
